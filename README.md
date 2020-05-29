@@ -21,12 +21,12 @@ __min_*__ et __max_*__ sont des valeurs de recherche pour la surface, le prix et
 **stop-time** est le nombre de secondes qui s'écoulent entre chaque requête pour une nouvelle annonce.
 
 ## Futur (_ou rêves_)
-[x] BUG : Récupération de l'adresse du bien seul (pas celle de l'agence immobilière)
-[x] Lancement quotidien sur Heroku (sans photo ou avec photo avec Amazon S3)
-[ ] Affichage sur une carte type Google Maps des annonces
-[ ] Calcul de prix moyens selon type de biens (# chambres, commune, ...)
-[ ] Identification de la localisation sur base de la description (nom de rue ou quartier)
-[ ] Identification des charges comprises
+- [x] BUG : Récupération de l'adresse du bien seul (pas celle de l'agence immobilière)
+- [x] Lancement quotidien sur Heroku (sans photo ou avec photo avec Amazon S3)
+- [ ] Affichage sur une carte type Google Maps des annonces
+- [ ] Calcul de prix moyens selon type de biens (# chambres, commune, ...)
+- [ ] Identification de la localisation sur base de la description (nom de rue ou quartier)
+- [ ] Identification des charges comprises
 
 ## Modules utilisés
 Ce script utilise BeautifulSoup4 et requests.
