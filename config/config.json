@@ -9,7 +9,9 @@
 "min_room":0,
 "max_room":0,
 "photos" : false,
-"stop_tim":5,
+"time_search_page":3,
+"time_classified":3,
+"save":true,
 "REQUESTS_HEADERS" : {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:75.0) Gecko/20100101 Firefox/75.0"},
 "SEARCHPAGE_IMMOWEB" : "https://www.immoweb.be/fr/recherche/",
 "IMMOWEB_CLASSIFIED" : "https://www.immoweb.be/fr/annonce/"
