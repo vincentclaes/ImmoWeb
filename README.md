@@ -29,8 +29,8 @@ Les critères de recherche doivent être indiqués dans config/config.json au fo
 
 
 ## Futur (_ou rêves_)
-~~- [x] Récupérer la description du bien~~
-~~- [x] Etoffer la sortie en console (nombre d'annonces existantes, mise-à-jour, créées)~~
+- [x] ~~Récupérer la description du bien~~
+- [x] ~~Etoffer la sortie en console (nombre d'annonces existantes, mise-à-jour, créées)~~
 - [x] Lancement quotidien sur Heroku (sans photo ou avec photo avec Amazon S3)
 - [ ] Affichage sur une carte type Google Maps des annonces
 - [ ] Calcul de prix moyens selon type de biens (# chambres, commune, ...)
