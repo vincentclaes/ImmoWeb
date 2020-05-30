@@ -60,18 +60,14 @@ def prepare_classified_page_url(classified):
     return CONFIG['IMMOWEB_CLASSIFIED'] + property_type + transaction + classified["property"]["location"]["locality"].lower() + "/" + classified["property"]["location"]["postalCode"] + "/" + str(classified["id"])
 
 def prepare_search_page_soup(nbr_page):
-    # Request the first searchPage and take all the Immoweb Code on this page
-    if not TEST:
-        search_page = requests.get(prepare_search_page_url(nbr_page),headers=CONFIG['REQUESTS_HEADERS'])
-        search_soup = BeautifulSoup(search_page.content, "html.parser")
+    # return the searchPage 
+    
+    search_page = requests.get(prepare_search_page_url(nbr_page),headers=CONFIG['REQUESTS_HEADERS'])
+    search_soup = BeautifulSoup(search_page.content, "html.parser")
         
-        if SAVE :
-            with open("test/search_soup.html", "w", encoding="utf-8") as classified_file:
-                classified_file.write(search_soup.prettify())
-    else:
-        with open('test/search_soup.html','r', encoding="utf-8") as search_file :
-            search_page = search_file.read()
-        search_soup = BeautifulSoup(search_page,"html.parser")        
+    if CONFIG['save']:
+        with open("test/search_soup.html", "w", encoding="utf-8") as classified_file:
+            classified_file.write(search_soup.prettify())
     return search_soup
 
 def split_take_first(str_to_split, splitting_str):
@@ -94,7 +90,20 @@ def format_new_classified(classified):
 def create_new_classified(soup):
     classified_id = str(soup.find("div",class_="classified__information--immoweb-code").string.split(":")[1].strip())
     
+    
     new_classified = {"first_seen": str(datetime.date.today()), "last_seen": str(datetime.date.today())}
+
+    # Localisation
+    localisation = eval((soup.find("div",class_="classified").find("script").string.split("property\":")[1].split("location\":")[1].split(",\"box\"")[0] +"}").replace("null","None"))
+    new_classified["postal_code"] = localisation["postalCode"]
+    new_classified["street"] = localisation["street"]
+    new_classified["number"] = localisation["number"]
+    
+    try:
+        new_classified["description"] = soup.find("p",class_="classified__description").string.strip()
+    except AttributeError:
+        new_classified["description"] = None
+
     for desktop6 in soup.find_all(class_="desktop--6") :
         for key, values in zip(desktop6.find_all("th"),desktop6.find_all("td")):
             if key.text.strip() in CLASSIFIED_MAP_TABLE:
@@ -115,11 +124,6 @@ def create_new_classified(soup):
     return format_new_classified(new_classified)
 
 if __name__ == "__main__":
-    
-    global TEST, SAVE
-    TEST = False # True if we are in testing
-    SAVE = False
-    
     nbr_saved_classified = 0
     nbr_new_classified = 0
     nbr_updated_classified = 0
@@ -138,7 +142,7 @@ if __name__ == "__main__":
     total_pages = math.ceil(int(str(search_soup.find('iw-search')).split("result-count=\"")[1].split("\"")[0])/30)
         
     for i in range(total_pages):
-        print("*** PAGE :"+str(i+1)+" / "+ str(total_pages) + " **")
+        print("*** PAGE : "+str(i+1)+" / "+ str(total_pages) + " **")
         search_soup = prepare_search_page_soup(i+1)
         classifieds = json.loads(str(search_soup.find('iw-search')).split("results-storage='")[1].split("' :unique-id")[0])
         
@@ -152,23 +156,22 @@ if __name__ == "__main__":
                 nbr_updated_classified += 1
             else:
                 print(id + " doesn't exist")
-                if not TEST:
-                    classified_page = requests.get(prepare_classified_page_url(classified),headers=CONFIG['REQUESTS_HEADERS'])
-                    classified_soup = BeautifulSoup(classified_page.content,"html.parser")
-                    
-                    if SAVE : 
-                        with open("classifieds/" + id+".html", "w", encoding="utf-8") as classified_file:
+
+                classified_page = requests.get(prepare_classified_page_url(classified),headers=CONFIG['REQUESTS_HEADERS'])
+                classified_soup = BeautifulSoup(classified_page.content,"html.parser")
+                
+                if CONFIG['save'] : 
+                    with open("classifieds/" + id+".html", "w", encoding="utf-8") as classified_file:
                             classified_file.write(classified_soup.prettify())
-                    time.sleep(CONFIG["stop_tim"])
-                else:
-                    with open("classifieds/" + id+".html",'r', encoding="utf-8") as classified_file :
-                        classified_page = classified_file.read()
-                    classified_soup = BeautifulSoup(classified_page,"html.parser")
-             
+
                 saved_classified[id] = create_new_classified(classified_soup)
                 nbr_new_classified += 1
-    
+
+                time.sleep(CONFIG["time_classified"])
+        time.sleep(CONFIG["time_search_page"])
+
     with open('saved_classified.json', 'w') as fp:
         json.dump(saved_classified, fp,ensure_ascii=False)
         
-    print("****\n\nThere are {} classified :\n - {} new classified \n - {} updated classified \n - {} out dated classified".format(len(saved_classified),nbr_new_classified, nbr_updated_classified, nbr_saved_classified - nbr_updated_classified))
+    print("""****\n\nThere are {} classified :\n - {} new classified \n - {} updated classified \n - {} out dated classified"""
+              .format(len(saved_classified),nbr_new_classified, nbr_updated_classified, nbr_saved_classified - nbr_updated_classified))
