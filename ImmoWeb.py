@@ -11,6 +11,8 @@ import datetime
 from bs4 import BeautifulSoup
 import requests
 
+global CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE
+
 
 def set_config_from_json(file_json):
     # Retrieve search configuration from config.json
@@ -118,13 +120,17 @@ if __name__ == "__main__":
     TEST = False # True if we are in testing
     SAVE = False
     
+    nbr_saved_classified = 0
+    nbr_new_classified = 0
+    nbr_updated_classified = 0
+    
     # Load configuration files
-    global CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE
     CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE = set_config_sub_types_mapping_table()
     # Load saved classifieds
     if pathlib.Path("saved_classified.json").exists():
         with open("saved_classified.json", "r") as f:
             saved_classified = json.load(f)
+            nbr_saved_classified = len(saved_classified)
     else:
         saved_classified = {}
     
@@ -132,34 +138,37 @@ if __name__ == "__main__":
     total_pages = math.ceil(int(str(search_soup.find('iw-search')).split("result-count=\"")[1].split("\"")[0])/30)
         
     for i in range(total_pages):
-        print("*** PAGE :"+str(i+1)+" / "+ total_pages)
+        print("*** PAGE :"+str(i+1)+" / "+ str(total_pages) + " **")
         search_soup = prepare_search_page_soup(i+1)
         classifieds = json.loads(str(search_soup.find('iw-search')).split("results-storage='")[1].split("' :unique-id")[0])
         
         # Cross ImmoWebCodes to find the new classifieds or update open classifieds
         # If classifieds don't exist no more, nothing to do
         for classified in classifieds:
-            if str(classified["id"]) in saved_classified.keys() :
-                print(str(classified["id"]) + " already exists")
-                saved_classified[str(classified["id"])]["last_seen"] = str(datetime.date.today())
+            id = str(classified["id"])
+            if id in saved_classified.keys() :
+                print(id + " already exists")
+                saved_classified[id]["last_seen"] = str(datetime.date.today())
+                nbr_updated_classified += 1
             else:
-                print(str(classified["id"]) + " doesn't exist")
+                print(id + " doesn't exist")
                 if not TEST:
                     classified_page = requests.get(prepare_classified_page_url(classified),headers=CONFIG['REQUESTS_HEADERS'])
                     classified_soup = BeautifulSoup(classified_page.content,"html.parser")
                     
                     if SAVE : 
-                        with open("classifieds/" + str(classified["id"])+".html", "w", encoding="utf-8") as classified_file:
+                        with open("classifieds/" + id+".html", "w", encoding="utf-8") as classified_file:
                             classified_file.write(classified_soup.prettify())
                     time.sleep(CONFIG["stop_tim"])
                 else:
-                    with open("classifieds/" + str(classified["id"])+".html",'r', encoding="utf-8") as classified_file :
+                    with open("classifieds/" + id+".html",'r', encoding="utf-8") as classified_file :
                         classified_page = classified_file.read()
                     classified_soup = BeautifulSoup(classified_page,"html.parser")
              
-                saved_classified[classified['id']] = create_new_classified(classified_soup)
+                saved_classified[id] = create_new_classified(classified_soup)
+                nbr_new_classified += 1
     
     with open('saved_classified.json', 'w') as fp:
         json.dump(saved_classified, fp,ensure_ascii=False)
-#     print(json.dumps(saved_classified,indent=4,ensure_ascii=False))
-#     print(str(datetime.date.today()))
+        
+    print("****\n\nThere are {} classified :\n - {} new classified \n - {} updated classified \n - {} out dated classified".format(len(saved_classified),nbr_new_classified, nbr_updated_classified, nbr_saved_classified - nbr_updated_classified))
