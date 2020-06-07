@@ -11,9 +11,6 @@ import datetime
 from bs4 import BeautifulSoup
 import requests
 
-global CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE
-
-
 def set_config_from_json(file_json):
     # Retrieve search configuration from config.json
     with open(file_json) as json_file:
@@ -47,8 +44,11 @@ def prepare_search_page_url(page_nbr):
         search_page.append("&maxSurface="+str(CONFIG['max_surf']))
     
     # Add all postal codes
-    CONFIG['postal_code'].sort()
-    search_page.append("&postalCodes=BE-"+"%2C".join(str(x) for x in CONFIG['postal_code']))
+    if isinstance(CONFIG['postal_code'],list):
+        CONFIG['postal_code'].sort()
+        search_page.append("&postalCodes=BE-"+"%2C".join(str(x) for x in CONFIG['postal_code']))
+    else:
+        search_page.append("&postalCodes=BE-"+str(CONFIG['postal_code']))
     
     return ''.join(search_page)
 
@@ -60,8 +60,7 @@ def prepare_classified_page_url(classified):
     return CONFIG['IMMOWEB_CLASSIFIED'] + property_type + transaction + classified["property"]["location"]["locality"].lower() + "/" + classified["property"]["location"]["postalCode"] + "/" + str(classified["id"])
 
 def prepare_search_page_soup(nbr_page):
-    # return the searchPage 
-    
+    # return the searchPage
     search_page = requests.get(prepare_search_page_url(nbr_page),headers=CONFIG['REQUESTS_HEADERS'])
     search_soup = BeautifulSoup(search_page.content, "html.parser")
         
@@ -123,13 +122,40 @@ def create_new_classified(soup):
     
     return format_new_classified(new_classified)
 
+global CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE
+CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE = set_config_sub_types_mapping_table()
+
+
+
 if __name__ == "__main__":
     nbr_saved_classified = 0
     nbr_new_classified = 0
     nbr_updated_classified = 0
     
     # Load configuration files
+#     global CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE
     CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE = set_config_sub_types_mapping_table()
+    
+    
+    # Save number of classified in Brussels in a separate file
+    if not pathlib.Path(str(datetime.date.today())+".json").exists():
+        total_classified = {}
+        postal_codes = [1000,1020,1030,1040,1050,1060,1070,1080,1081,1082,1083,1090,1120,1130,1140,1150,1160,1170,1180,1190,1200,1210]
+
+        for postal_code in postal_codes:
+            CONFIG["postal_code"] = postal_code
+            search_soup = prepare_search_page_soup(1)
+            total_classified[postal_code] = int(str(search_soup.find('iw-search')).split("result-count=\"")[1].split("\"")[0])
+#             print(str(postal_code) + " : " + str(total_classified[postal_code]))
+            time.sleep(CONFIG["time_search_page"])
+        
+        with open(str(datetime.date.today())+'.json', 'w') as fp:
+            json.dump(total_classified, fp,ensure_ascii=False)
+        print(sum(total_classified.values()))
+    else:
+        print(str(datetime.date.today()))
+        
+    
     # Load saved classifieds
     if pathlib.Path("saved_classified.json").exists():
         with open("saved_classified.json", "r") as f:
@@ -138,6 +164,7 @@ if __name__ == "__main__":
     else:
         saved_classified = {}
     
+    CONFIG, SUB_TYPES, CLASSIFIED_MAP_TABLE = set_config_sub_types_mapping_table()
     search_soup = prepare_search_page_soup(1)
     total_pages = math.ceil(int(str(search_soup.find('iw-search')).split("result-count=\"")[1].split("\"")[0])/30)
         
@@ -162,8 +189,8 @@ if __name__ == "__main__":
                 
                 if CONFIG['save'] : 
                     with open("classifieds/" + id+".html", "w", encoding="utf-8") as classified_file:
-                            classified_file.write(classified_soup.prettify())
-
+                        classified_file.write(classified_soup.prettify())
+                            
                 saved_classified[id] = create_new_classified(classified_soup)
                 nbr_new_classified += 1
 
