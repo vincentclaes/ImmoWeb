@@ -1,18 +1,21 @@
 {
+"url": "https://www.immoweb.be/en/search/apartment/for-sale?countries=BE&maxPrice=200000&postalCodes=BE-2800%2CBE-3010%2CBE-3000&propertySubtypes=FLAT_STUDIO%2CDUPLEX&buildingConditions=JUST_RENOVATED%2CAS_NEW&page=1&orderBy=relevance",
 "rent":true,
 "apartement":true,
-"postal_code":[1090,1083,1020,1081,1080],
+"sub_type": ["FLAT_STUDIO","DUPLEX"],
+"condition": ["JUST_RENOVATED","NEW"],
+"postal_code":[2800,3000,3010],
 "min_surf":0,
-"max_surf":0,
+"max_surf":100,
 "min_price":0,
-"max_price":0,
-"min_room":0,
-"max_room":0,
+"max_price":200000,
+"min_room":1,
+"max_room":2,
 "photos" : false,
 "time_search_page":3,
 "time_classified":3,
 "save":true,
 "REQUESTS_HEADERS" : {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:75.0) Gecko/20100101 Firefox/75.0"},
-"SEARCHPAGE_IMMOWEB" : "https://www.immoweb.be/fr/recherche/",
-"IMMOWEB_CLASSIFIED" : "https://www.immoweb.be/fr/annonce/"
+"SEARCHPAGE_IMMOWEB" : "https://www.immoweb.be/en/search/",
+"IMMOWEB_CLASSIFIED" : "https://www.immoweb.be/en/classified/"
 }
